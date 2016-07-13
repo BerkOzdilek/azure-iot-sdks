@@ -47,11 +47,24 @@ namespace DeviceExplorer
                             SuspensionReason = device.StatusReason
                         };
 
-                        if (device.Authentication != null &&
-                            device.Authentication.SymmetricKey != null)
+                        if (device.Authentication != null)
                         {
-                            deviceEntity.PrimaryKey = device.Authentication.SymmetricKey.PrimaryKey;
-                            deviceEntity.SecondaryKey = device.Authentication.SymmetricKey.SecondaryKey;
+                            if ((device.Authentication.SymmetricKey != null) &&
+                                !((device.Authentication.SymmetricKey.PrimaryKey == null) ||
+                                  (device.Authentication.SymmetricKey.SecondaryKey == null)))
+                            {
+                                deviceEntity.PrimaryKey = device.Authentication.SymmetricKey.PrimaryKey;
+                                deviceEntity.SecondaryKey = device.Authentication.SymmetricKey.SecondaryKey;
+                                deviceEntity.PrimaryThumbPrint = "";
+                                deviceEntity.SecondaryThumbPrint = "";
+                            }
+                            else
+                            {
+                                deviceEntity.PrimaryKey = "";
+                                deviceEntity.SecondaryKey = "";
+                                deviceEntity.PrimaryThumbPrint = device.Authentication.X509Thumbprint.PrimaryThumbprint;
+                                deviceEntity.SecondaryThumbPrint = device.Authentication.X509Thumbprint.SecondaryThumbprint;
+                            }
                         }
 
                         listOfDevices.Add(deviceEntity);
@@ -86,10 +99,24 @@ namespace DeviceExplorer
                 deviceConnectionString.Append(hostName);
                 deviceConnectionString.AppendFormat("DeviceId={0}", device.Id);
 
-                if (device.Authentication != null &&
-                    device.Authentication.SymmetricKey != null)
+                //if (device.Authentication != null &&
+                //    device.Authentication.SymmetricKey != null)
+                //{
+                //    deviceConnectionString.AppendFormat(";SharedAccessKey={0}", device.Authentication.SymmetricKey.PrimaryKey);
+                //}
+
+                if (device.Authentication != null)
                 {
-                    deviceConnectionString.AppendFormat(";SharedAccessKey={0}", device.Authentication.SymmetricKey.PrimaryKey);
+                    if ((device.Authentication.SymmetricKey != null) &&
+                        !((device.Authentication.SymmetricKey.PrimaryKey == null) ||
+                          (device.Authentication.SymmetricKey.SecondaryKey == null)))
+                    {
+                        deviceConnectionString.AppendFormat(";SharedAccessKey={0}", device.Authentication.SymmetricKey.PrimaryKey);
+                    }
+                    else
+                    {
+                        deviceConnectionString.AppendFormat(";X509=true");
+                    }
                 }
 
                 if (this.protocolGatewayHostName.Length > 0)
